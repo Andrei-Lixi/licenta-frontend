@@ -1,0 +1,124 @@
+/* container pentru întreaga pagină */
+.container {
+  text-align: center;
+  padding: 50px;
+  background-color: #f4f7fb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Stiluri pentru titlurile principale */
+.heading {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+/* Formularele de autentificare și înregistrare */
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.form-box {
+  width: 400px;
+  padding: 30px;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-title {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+}
+
+/* Stiluri pentru formular */
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.label {
+  display: block;
+  font-size: 1.1rem;
+  color: #34495e;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.icon {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-right: 10px;
+}
+
+.input {
+  padding: 12px;
+  font-size: 1rem;
+  width: 100%;
+  border: none;
+  outline: none;
+}
+
+/* Butoanele */
+.button {
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  width: 100%;
+}
+
+.secondary-button {
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  background-color: #95a5a6;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  width: 100%;
+  margin-top: 15px;
+}
+
+/* Linkuri și texturi */
+.redirect-text {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+
+.link {
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: underline;
+}

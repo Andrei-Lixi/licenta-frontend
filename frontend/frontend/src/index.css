@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: var(--font-family-monospace);
+  background-color: var(--surface-100);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  color: var(--primary-color);
+}

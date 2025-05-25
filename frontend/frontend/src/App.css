@@ -1,0 +1,29 @@
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--surface-ground); /* Fundal neutru, adaptabil la temă */
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.app-container {
+  width: 90%;
+  max-width: 600px;
+  background: var(--surface-card);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+h1 {
+  color: var(--primary-color);
+}
+
+p {
+  color: var(--text-color-secondary);
+  font-size: 1.1rem;
+}
