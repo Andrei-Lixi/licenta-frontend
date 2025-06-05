@@ -1,18 +1,24 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuthToken } from '../hooks/useAuthToken'; // Corect, dacă fișierul e în folderul `hooks`
-
+import { useAuthToken } from '../hooks/useAuthToken';
 
 const ProtectedRoute = ({ children }) => {
-  // Verifică dacă utilizatorul este autentificat
-  const { token } = useAuthToken(); // Sau în funcție de modul în care verifici statusul autentificării
+  const { token, getRol } = useAuthToken();
 
-  // Dacă nu există token (sau alt indicator de autentificare), redirecționează utilizatorul la pagina de login
   if (!token) {
+    // Dacă nu e autentificat, redirecționează la Register
     return <Navigate to="/Register" replace />;
   }
 
-  // Dacă utilizatorul este autentificat, permite accesul la pagina dorită
+  const roleFromToken = getRol();
+  const role = Array.isArray(roleFromToken) ? roleFromToken[0] : roleFromToken;
+
+  if (role !== "ROLE_ADMIN") {
+    // Dacă nu este admin, redirecționează la pagina de acces interzis
+    return <Navigate to="/access-denied" replace />;
+  }
+
+  // Dacă e admin, afișează conținutul protejat
   return children;
 };
 

@@ -9,6 +9,7 @@ import CoursePage from '../pages/CoursePage';
 import Settings from '../pages/Settings';
 import ChatPage from '../pages/Chat';
 import Admin from '../pages/Admin';
+import AccessDenied from '../pages/AccessDenied';
 
 
 function AppRouter() {
@@ -22,16 +23,19 @@ function AppRouter() {
         <Route path="/CoursePage" element={<CoursePage />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/Chat" element={<ChatPage />} />
-        <Route path="/Admin" element={<Admin />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
+
+        
         {/* Ruta protejată pentru utilizatorii autentificați */}
-        <Route
-          path="/map"
+        <Route 
+          path="/Admin" 
           element={
-            <ProtectedRoute>
-            
-          </ProtectedRoute>
-          }
+            <ProtectedRoute requiredRole="ROLE_ADMIN">
+              <Admin />
+            </ProtectedRoute>
+          } 
         />
+
         {/* Dacă nu vrei ca ruta de login să fie protejată, o poți păstra ca fiind publică */}
       </Routes>
     </Router>
