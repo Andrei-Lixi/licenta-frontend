@@ -8,7 +8,7 @@ function App() {
     
     <div className="App">
   
-      {/* Adaugă alte secțiuni după caz */}
+      
     </div>
   );
 }

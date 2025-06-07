@@ -6,24 +6,29 @@ import { useAuthToken } from '../hooks/useAuthToken';
 export default function BaraMeniu({ onToggleDarkMode, isDarkMode }) {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { getRol, removeToken } = useAuthToken();
+
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
-    if (user) setIsLoggedIn(true);
-  }, []);
+    if (user) {
+      setIsLoggedIn(true);
+      const roleFromToken = getRol();
+      const rolCurent = Array.isArray(roleFromToken) ? roleFromToken[0] : roleFromToken;
+      setRole(rolCurent);
+    }
+  }, [getRol]);
 
-  const { removeToken } = useAuthToken(); // extrage din hook
+  const handleLogout = () => {
+    removeToken();
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    navigate("/");
+    window.location.reload();
+  };
 
-const handleLogout = () => {
-  removeToken(); // ⬅️ șterge tokenul și din state și din localStorage
-  localStorage.removeItem("user");
-  setIsLoggedIn(false);
-  navigate("/");
-  window.location.reload(); // opțional, dar recomandat pentru reset complet
-};
-
-
-
+  // Meniul de baza
   const items = [
     {
       label: "Home",
@@ -39,23 +44,39 @@ const handleLogout = () => {
             {
               label: "Dark Mode",
               icon: isDarkMode ? "pi pi-moon" : "pi pi-sun",
-              command: onToggleDarkMode, // Activează dark mode în Home
+              command: onToggleDarkMode,
             },
             { label: "Logout", icon: "pi pi-sign-out", command: handleLogout },
           ]
-        : [{ label: "Înregistrează-te", icon: "pi pi-user-plus", command: () => navigate("/Register") },
+        : [
+            { label: "Înregistrează-te", icon: "pi pi-user-plus", command: () => navigate("/Register") },
             {
-                label: "Dark Mode",
-                icon: isDarkMode ? "pi pi-moon" : "pi pi-sun",
-                command: onToggleDarkMode, // Activează dark mode în Home
-              },
-        ],
+              label: "Dark Mode",
+              icon: isDarkMode ? "pi pi-moon" : "pi pi-sun",
+              command: onToggleDarkMode,
+            },
+          ],
     },
     {
+      label: "Contact",
+      icon: "pi pi-envelope",
+      command: () => navigate("/Chat"),
+    },
+  ];
+
+  // Dacă utilizatorul e admin, adaugă butonul Admin și nu afișa Lectii
+  if (role === "ROLE_ADMIN") {
+    items.push({
+      label: "Admin",
+      icon: "pi pi-lock",
+      command: () => navigate("/Admin"),
+    });
+  } else {
+    // Pentru toți ceilalți utilizatori, adaugă butonul Lectii
+    items.push({
       label: "Lectii",
       icon: "pi pi-search",
       items: [
-        
         {
           label: "Demo",
           icon: "pi pi-server",
@@ -73,14 +94,8 @@ const handleLogout = () => {
           ],
         },
       ],
-    },
-    
-    {
-      label: "Contact",
-      icon: "pi pi-envelope",
-      command: () => navigate("/Chat"),
-    },
-  ];
+    });
+  }
 
   return (
     <div className="card">

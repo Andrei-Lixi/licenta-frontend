@@ -352,7 +352,7 @@ const CoursePage = () => {
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course, index) => (
             <Card key={index} title={course.name}>
-              {/* Detalii suplimentare */}
+             
             </Card>
           ))
         ) : (

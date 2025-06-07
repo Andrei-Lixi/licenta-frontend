@@ -4,7 +4,7 @@
 @import "primereact/resources/primereact.min.css";
 @import "primeflex/primeflex.css";
 
-/* Fundal uniform cu efecturi subtile */
+
 body {
   background: linear-gradient(135deg, #f4f7fb, #ffffff);
   font-family: 'Arial', sans-serif;
@@ -14,7 +14,7 @@ body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  animation: fadeIn 1s ease-out; /* Animație de apariție pentru întreaga pagină */
+  animation: fadeIn 1s ease-out; 
 }
 
 body.dark-mode {
@@ -68,7 +68,7 @@ body {
   width: 80%;
   max-width: 900px;
   transition: all 0.3s ease-in-out;
-  animation: slideInUp 0.8s ease-out; /* Animație de intrare pentru container */
+  animation: slideInUp 0.8s ease-out; 
 }
 
 /* Efecte la hover pentru container */
@@ -77,14 +77,14 @@ body {
   transform: scale(1.02); /* Efect de zoom la hover */
 }
 
-/* Titlul principal - elegant și modern */
+
 .heading {
   font-size: 3rem;
   font-weight: bold;
   color: #2c3e50;
   margin-bottom: 20px;
   text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
-  animation: fadeIn 1s ease-in; /* Efect de apariție lentă */
+  animation: fadeIn 1s ease-in; 
 }
 
 /* Textul introductiv */

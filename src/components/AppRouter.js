@@ -20,7 +20,6 @@ function AppRouter() {
         <Route path="/" element={<Home />} />
         <Route path="/Register" element={<Register />} />
         <Route path="/QuizPage" element={<QuizPage />} />
-        <Route path="/CoursePage" element={<CoursePage />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/Chat" element={<ChatPage />} />
         <Route path="/access-denied" element={<AccessDenied />} />
@@ -36,7 +35,16 @@ function AppRouter() {
           } 
         />
 
-        {/* Dacă nu vrei ca ruta de login să fie protejată, o poți păstra ca fiind publică */}
+        <Route 
+          path="/CoursePage" 
+          element={
+            <ProtectedRoute requiredRole={["ROLE_TEACHER", "ROLE_USER"]}>
+              <CoursePage />
+            </ProtectedRoute>
+          } 
+        />
+
+        
       </Routes>
     </Router>
   );

@@ -52,7 +52,7 @@ function Settings() {
 
   return (
     <div className={darkMode ? "dark-mode" : "light-mode"}>
-      {/* Bara de meniu plasată aici */}
+     
       <BaraMeniu onToggleDarkMode={handleToggleDarkMode} isDarkMode={darkMode} />
       <br></br>
       <div className="container">
