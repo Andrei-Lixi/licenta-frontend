@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaRegUser, FaPhone, FaEnvelope, FaLock } from "react-icons/fa"; 
+import { FaEnvelope, FaLock } from "react-icons/fa";
 import { useAuthToken } from '../hooks/useAuthToken';
 import FlashMessage from "../components/FlashMessage";
 import '../css/LoginRegister.css';
@@ -8,13 +8,12 @@ import '../css/LoginRegister.css';
 function LoginRegister() {
   const [message, setMessage] = useState(null);
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
+  const [type, setType] = useState("student"); // default
   const [isLogin, setIsLogin] = useState(true);
   const { saveToken } = useAuthToken();
 
-  
   const handleSubmitLogin = async (e) => {
     e.preventDefault();
     setMessage(null);
@@ -23,15 +22,15 @@ function LoginRegister() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         mode: "cors",
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: email, password }), // dacă backend-ul așteaptă "username"
       });
 
       const data = await response.json();
 
       if (response.ok) {
         saveToken(data.jwt);
-        localStorage.setItem("user", JSON.stringify({ username })); // Salvăm userul
-        navigate("/"); // Navigăm către Contul Meu
+        localStorage.setItem("user", JSON.stringify({ email }));
+        navigate("/");
       } else {
         setMessage({ type: "danger", text: "Eroare de autentificare!" });
       }
@@ -43,10 +42,10 @@ function LoginRegister() {
   const handleSubmitRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/register", {
+      const response = await fetch("/api/public/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, phone, password }),
+        body: JSON.stringify({ email, password, type }),
       });
 
       const data = await response.json();
@@ -82,8 +81,8 @@ function LoginRegister() {
                   <input
                     className="input"
                     type="email"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -113,34 +112,45 @@ function LoginRegister() {
             <h2 className="form-title">Înregistrare</h2>
             <form onSubmit={handleSubmitRegister} className="form">
               <div className="input-group">
-                <label className="label">Nume:</label>
+                <label className="label">Email:</label>
                 <div className="input-container">
-                  <FaRegUser className="icon" />
+                  <FaEnvelope className="icon" />
                   <input
                     className="input"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
               </div>
 
               <div className="input-group">
-                <label className="label">Număr de telefon:</label>
+                <label className="label">Parolă:</label>
                 <div className="input-container">
-                  <FaPhone className="icon" />
+                  <FaLock className="icon" />
                   <input
                     className="input"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="ex. 0712345678"
-                    pattern="^[0-9]{10}$"
-                    title="Numărul de telefon trebuie să aibă exact 10 caractere."
-                    maxLength="10"
                   />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="label">Tip utilizator:</label>
+                <div className="input-container">
+                  <select
+                    className="input"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    required
+                  >
+                    <option value="student">Student</option>
+                    <option value="teacher">Profesor</option>
+                  </select>
                 </div>
               </div>
 

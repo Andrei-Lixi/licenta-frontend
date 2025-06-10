@@ -1,98 +1,168 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { useNavigate } from "react-router-dom";
 
-
 function Admin() {
   const navigate = useNavigate();
+  const [asteptari, setAsteptari] = useState([]);
+  const [conturi, setConturi] = useState([]);
 
-  // Date demo
-  const lectii = [
-    { id: 1, titlu: "Matematică - Algebra", profesor: "Ion Popescu", data: "2025-06-01" },
-    { id: 2, titlu: "Istorie - Evul Mediu", profesor: "Maria Ionescu", data: "2025-06-02" },
-  ];
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
 
-  const quizuri = [
-    { id: 1, titlu: "Quiz Algebra", lectieId: 1, dataCrearii: "2025-05-30" },
-    { id: 2, titlu: "Quiz Evul Mediu", lectieId: 2, dataCrearii: "2025-05-31" },
-  ];
+    fetch("/api/admin/user/unconfirmed", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          throw new Error("Neautorizat. Redirecționare spre login.");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setAsteptari(data);
+      })
+      .catch((err) => {
+        console.error("Eroare la încărcarea conturilor neconfirmate:", err);
+        navigate("/");
+      });
+  }, [navigate]);
 
-  const conturi = [
-    { id: 1, username: "profesor1", rol: "Profesor", status: "Activ" },
-    { id: 2, username: "elev1", rol: "Elev", status: "Activ" },
-    { id: 3, username: "admin", rol: "Admin", status: "Activ" },
-  ];
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
 
-  const asteptari = [
-    { id: 1, username: "newuser1", cerere: "Înregistrare elev", dataCerere: "2025-06-01" },
-    { id: 2, username: "newprof1", cerere: "Înregistrare profesor", dataCerere: "2025-06-02" },
-  ];
+    fetch("/api/admin/user/all", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Eroare la încărcarea conturilor complete");
+        return res.json();
+      })
+      .then((data) => {
+        setConturi(data);
+      })
+      .catch((err) => {
+        console.error("Eroare la încărcarea tuturor conturilor:", err);
+      });
+  }, []);
 
-  // Funcție de logout: șterge token, user și navighează spre login (sau principală)
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
-    navigate("/"); // sau "/"
+    navigate("/");
   };
+
+  const handleConfirm = (id) => {
+    const token = localStorage.getItem("authToken");
+
+    fetch(`/api/admin/user/confirm/${id}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Confirmarea a eșuat");
+        setAsteptari((prev) => prev.filter((u) => u.id !== id));
+      })
+      .catch((err) => {
+        console.error("Eroare la confirmare:", err);
+      });
+  };
+
+  const handleReject = (id) => {
+    const token = localStorage.getItem("authToken");
+
+    fetch(`/api/admin/user/confirm/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Respingerea a eșuat");
+        setAsteptari((prev) => prev.filter((u) => u.id !== id));
+      })
+      .catch((err) => {
+        console.error("Eroare la respingere:", err);
+      });
+  };
+
+  // ✅ Șterge un cont existent
+  const handleDeleteUser = (id) => {
+    const token = localStorage.getItem("authToken");
+
+    if (!window.confirm("Ești sigur că vrei să ștergi acest cont?")) return;
+
+    fetch(`/api/admin/user/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Ștergerea a eșuat");
+        setConturi((prev) => prev.filter((user) => user.id !== id));
+      })
+      .catch((err) => {
+        console.error("Eroare la ștergerea contului:", err);
+      });
+  };
+
+  // ✅ Template pentru butonul de ștergere
+  const deleteButtonTemplate = (rowData) => (
+    <Button
+      icon="pi pi-times"
+      className="p-button-danger"
+      rounded
+      tooltip="Șterge contul"
+      onClick={() => handleDeleteUser(rowData.id)}
+    />
+  );
+
+  const actiuniTemplate = (rowData) => (
+    <div className="flex gap-2">
+      <Button icon="pi pi-check" severity="success" rounded onClick={() => handleConfirm(rowData.id)} />
+    </div>
+  );
 
   return (
     <div style={{ padding: 20 }}>
-      
-
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h1>Panou Admin</h1>
         <Button
-            label="Deconectare"
-            icon="pi pi-sign-out"
-            severity="danger"      // roșu pentru acțiuni de atenționare/ștergere
-            raised                // buton ridicat, cu umbră
-            rounded               // colțuri rotunjite
-            className="p-button-lg" // buton mai mare
-            onClick={handleLogout}
-            style={{ minWidth: '140px' }}
-            />
-
+          label="Deconectare"
+          icon="pi pi-sign-out"
+          severity="danger"
+          raised
+          rounded
+          className="p-button-lg"
+          onClick={handleLogout}
+          style={{ minWidth: "140px" }}
+        />
       </div>
 
       <section style={{ marginBottom: 40 }}>
-        <h2>Lista lecții</h2>
-        <DataTable value={lectii} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există lecții">
-          <Column field="id" header="ID" style={{ width: "5rem" }}></Column>
-          <Column field="titlu" header="Titlu lecție"></Column>
-          <Column field="profesor" header="Profesor"></Column>
-          <Column field="data" header="Data lecției"></Column>
-        </DataTable>
-      </section>
-
-      <section style={{ marginBottom: 40 }}>
-        <h2>Lista quizuri</h2>
-        <DataTable value={quizuri} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există quizuri">
-          <Column field="id" header="ID" style={{ width: "5rem" }}></Column>
-          <Column field="titlu" header="Titlu quiz"></Column>
-          <Column field="lectieId" header="ID lecție"></Column>
-          <Column field="dataCrearii" header="Data creării"></Column>
-        </DataTable>
-      </section>
-
-      <section style={{ marginBottom: 40 }}>
-        <h2>Lista conturi create</h2>
-        <DataTable value={conturi} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există conturi">
-          <Column field="id" header="ID" style={{ width: "5rem" }}></Column>
-          <Column field="username" header="Username"></Column>
-          <Column field="rol" header="Rol"></Column>
-          <Column field="status" header="Status"></Column>
+        <h2>Lista așteptări (conturi neconfirmate)</h2>
+        <DataTable value={asteptari} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există cereri">
+          <Column field="id" header="ID" style={{ width: "5rem" }} />
+          <Column field="email" header="Email" />
+          <Column body={actiuniTemplate} header="Acțiuni" style={{ width: "10rem" }} />
         </DataTable>
       </section>
 
       <section>
-        <h2>Lista așteptări</h2>
-        <DataTable value={asteptari} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există cereri">
-          <Column field="id" header="ID" style={{ width: "5rem" }}></Column>
-          <Column field="username" header="Username"></Column>
-          <Column field="cerere" header="Cerere"></Column>
-          <Column field="dataCerere" header="Data cererii"></Column>
+        <h2>Toate conturile create</h2>
+        <DataTable value={conturi} paginator rows={3} responsiveLayout="scroll" emptyMessage="Nu există conturi">
+          <Column field="id" header="ID" style={{ width: "5rem" }} />
+          <Column field="email" header="Email" />
+          <Column body={deleteButtonTemplate} header="Șterge" style={{ width: "6rem" }} />
         </DataTable>
       </section>
     </div>
