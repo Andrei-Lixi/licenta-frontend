@@ -10,6 +10,7 @@ import Settings from '../pages/Settings';
 import ChatPage from '../pages/Chat';
 import Admin from '../pages/Admin';
 import AccessDenied from '../pages/AccessDenied';
+import CourseStudent from '../pages/CourseStudent';
 
 
 function AppRouter() {
@@ -23,7 +24,7 @@ function AppRouter() {
         <Route path="/Settings" element={<Settings />} />
         <Route path="/Chat" element={<ChatPage />} />
         <Route path="/access-denied" element={<AccessDenied />} />
-
+        <Route path="/courseStudent" element={<CourseStudent />} />
         
         {/* Ruta protejată pentru utilizatorii autentificați */}
         <Route 

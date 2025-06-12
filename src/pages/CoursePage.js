@@ -8,13 +8,12 @@ import BaraMeniu from "../components/BaraMeniu";
 import { Toast } from 'primereact/toast';
 import { InputText } from 'primereact/inputtext';
 import { useAuthToken } from '../hooks/useAuthToken';
+import { FileUpload } from 'primereact/fileupload';
 
 
 
 const USER_ROLE = {
-  NONE: 0,
   TEACHER: 2,
-  STUDENT: 3,
 };
 
 const CoursePage = () => {
@@ -34,6 +33,7 @@ const CoursePage = () => {
   const [courseTitle, setCourseTitle] = useState("");
   const [coursesUpdated, setCoursesUpdated] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState([]);
+  const [teacherLessons, setTeacherLessons] = useState([]);
 
   const { token, getRol } = useAuthToken();
 
@@ -41,17 +41,91 @@ const CoursePage = () => {
   const [lessonsFromDB, setLessonsFromDB] = useState([]);
 
 
-  const classOptions = Array.from({ length: 12 }, (_, i) => ({
-    label: `Clasa ${i + 1}`,
-    value: i + 1,
-  })).concat({ label: "Facultate", value: "facultate" });
+  const classOptions = Array.from({ length: 4 }, (_, i) => ({
+    label: `Clasa ${i + 5}`,
+    value: i + 5,
+  }));
 
   const domainOptions = [
-    { label: "Matematica", value: "matematica" },
-    { label: "Fizica", value: "fizica" },
-    { label: "Romana", value: "romana" },
-    { label: "Chimie", value: "chimie" },
+    { label: "Matematica", value: "math" },
+    { label: "Chimie", value: "chemistry" },
+    { label: "Fizica", value: "physics" },
+    
   ];
+
+  const fetchTeacherLessons = async () => {
+  try {
+    const response = await fetch('/api/teacher/lessons', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) throw new Error('Eroare la preluarea lecțiilor');
+
+    const data = await response.json();
+    setTeacherLessons(data);
+
+  } catch (error) {
+    console.error("Eroare la preluarea lecțiilor:", error);
+    toast.current?.show({
+      severity: 'error',
+      summary: 'Eroare',
+      detail: 'Nu s-au putut încărca lecțiile profesorului.',
+      life: 3000,
+    });
+  }
+};
+
+
+const handleFileUpload = async (event, lessonId) => {
+  const file = event.files[0];
+
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(`/api/teacher/lesson/file/add/${lessonId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error("Upload failed");
+
+    toast.current.show({
+      severity: 'success',
+      summary: 'Succes',
+      detail: 'Fișier încărcat cu succes.',
+      life: 3000,
+    });
+
+    // Actualizare lista lecțiilor după upload
+    await fetchTeacherLessons();
+
+  } catch (err) {
+    toast.current.show({
+      severity: 'error',
+      summary: 'Eroare',
+      detail: 'Fișierul nu a putut fi încărcat.',
+      life: 3000,
+    });
+  }
+};
+
+
+
+useEffect(() => {
+  if (userRole === USER_ROLE.TEACHER && token) {
+    fetchTeacherLessons();
+  }
+}, [userRole, token]);
+
 
   // ✅ Verificare robustă a rolurilor
   useEffect(() => {
@@ -66,7 +140,7 @@ const CoursePage = () => {
       if (role === "ROLE_TEACHER") {
         setUserRole(USER_ROLE.TEACHER);
       } else if (role === "ROLE_USER") { // <-- contul de student
-        setUserRole(USER_ROLE.STUDENT);
+        navigate("/CourseStudent");
       } else if (role === "ROLE_ADMIN") {
          navigate("/Admin");  // Redirecționează adminul către pagina /admin
         }
@@ -135,56 +209,64 @@ const CoursePage = () => {
   }
 
   const handleAddLesson = async () => {
-    try {
-      const payload = {
-        name: courseTitle,
-        class: selectedClassForm,
-        domain: selectedDomainForm,
-      };
-  
-      const response = await fetch('/api/teacher/lesson/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) throw new Error('Eroare la adăugarea lecției');
-  
-      toast.current.show({
-        severity: 'success',
-        summary: 'Lecție adăugată',
-        detail: `Lecția "${courseTitle}" a fost adăugată cu succes.`,
-        life: 3000,
-      });
-  
-      // Resetare și localStorage
-      const newLesson = {
-        id: Date.now(),
-        title: courseTitle,
-        type: "curs",
-        class: selectedClassForm,
-        domain: selectedDomainForm,
-      };
-      const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
-      existingCourses.push(newLesson);
-      localStorage.setItem("courses", JSON.stringify(existingCourses));
-  
-      setShowForm(false);
-      resetForm();
-  
-    } catch (error) {
-      console.error(error);
-      toast.current.show({
-        severity: 'error',
-        summary: 'Eroare',
-        detail: 'Nu s-a putut adăuga lecția.',
-        life: 3000,
-      });
-    }
-  };
+  try {
+    const classMap = {
+      5: "five",
+      6: "six",
+      7: "seven",
+      8: "eight",
+    };
+
+    const payload = {
+      name: courseTitle,
+      grade: classMap[selectedClassForm],
+      field: selectedDomainForm,
+    };
+
+    const response = await fetch('/api/teacher/lesson/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error('Eroare la adăugarea lecției');
+
+    toast.current.show({
+      severity: 'success',
+      summary: 'Lecție adăugată',
+      detail: `Lecția "${courseTitle}" a fost adăugată cu succes.`,
+      life: 3000,
+    });
+
+    const newLesson = {
+      id: Date.now(),
+      title: courseTitle,
+      type: "curs",
+      grade: classMap[selectedClassForm],
+      field: selectedDomainForm,
+    };
+
+    const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
+    existingCourses.push(newLesson);
+    localStorage.setItem("courses", JSON.stringify(existingCourses));
+
+    setShowForm(false);
+    resetForm();
+
+  } catch (error) {
+    console.error(error);
+    toast.current.show({
+      severity: 'error',
+      summary: 'Eroare',
+      detail: 'Nu s-a putut adăuga lecția.',
+      life: 3000,
+    });
+  }
+};
+
   
   const handleAddQuiz = async () => {
   if (!courseTitle) {
@@ -271,39 +353,7 @@ const CoursePage = () => {
   };
   
 
-  /*const handleAddCourse = () => {
-    const newCourse = {
-      id: Date.now(),
-      title: courseTitle,
-      type: courseType,
-      class: selectedClassForm,
-      domain: selectedDomainForm,
-      questions: quizQuestions,
-    };
-
-    const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
-    existingCourses.push(newCourse);
-    localStorage.setItem("courses", JSON.stringify(existingCourses));
-
-    toast.current.show({
-      severity: 'success',
-      summary: courseType === "quiz" ? 'Quiz adăugat!' : 'Curs adăugat!',
-      detail: `${courseType === "quiz" ? "Quizul" : "Cursul"} "${courseTitle}" a fost adăugat cu succes.`,
-      life: 3000
-    });
-
-    setShowForm(false);
-    setCourseTitle("");
-    setSelectedClassForm(null);
-    setSelectedDomainForm(null);
-    setCourseType(null);
-    setQuizQuestions([]);
-    setCoursesUpdated(prev => !prev);
-
-    if (courseType === "quiz") {
-      navigate("/QuizPage", { state: { quizData: newCourse } });
-    }
-  };  */
+ 
 
   const handleDeleteCourse = (indexToDelete) => {
     const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
@@ -331,36 +381,101 @@ const CoursePage = () => {
     setQuizQuestions(updated);
   };
 
-  const CourseList = ({ selectedClass, selectedDomain, courses }) => {
-    console.log("courses primit:", courses);
-    if (!Array.isArray(courses)) {
-      return <p>Eroare: lecțiile nu sunt în formatul așteptat.</p>;
-    }
-  
-    const filteredCourses = courses.filter(
-      (course) => String(course.class) === String(selectedClass) && course.domain === selectedDomain
-    );
+  const CourseList = ({ selectedClass, selectedDomain, courses, token, onDeleteSuccess }) => {
+  const toast = useRef(null);
 
-    
-  
-    if (!selectedClass || !selectedDomain) {
-      return <p>Selectează o clasă și un domeniu pentru a vedea lecțiile.</p>;
+  const handleDelete = async (courseId) => {
+    try {
+      const response = await fetch(`/api/teacher/lesson/remove/${courseId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Eroare la ștergerea cursului');
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Succes',
+        detail: 'Cursul a fost șters',
+        life: 2000,
+      });
+      onDeleteSuccess();
+    } catch (error) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Eroare',
+        detail: 'Nu s-a putut șterge cursul.',
+        life: 3000,
+      });
     }
-  
-    return (
-      <div>
-        {filteredCourses.length > 0 ? (
-          filteredCourses.map((course, index) => (
-            <Card key={index} title={course.name}>
-             
-            </Card>
-          ))
-        ) : (
-          <p>Nu sunt lecții disponibile momentan.</p>
-        )}
-      </div>
-    );
   };
+
+  const classMapping = {
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+  };
+
+  const filteredCourses = courses.filter(
+    (course) =>
+      classMapping[course.grade] === selectedClass &&
+      course.field === selectedDomain
+  );
+
+  return (
+    <div>
+      <Toast ref={toast} />
+      {filteredCourses.length > 0 ? (
+        filteredCourses.map((course) => (
+          <Card
+            key={course.id}
+            style={{
+              marginBottom: '1rem',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              borderRadius: '8px',
+              padding: '1rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, textTransform: 'capitalize', flex: 1 }}>
+                {course.name}
+              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <FileUpload
+                  name="file"
+                  customUpload
+                  uploadHandler={(e) => handleFileUpload(e, course.id)}
+                  maxFileSize={10000000}
+                  mode="basic"
+                  chooseLabel="Upload"
+                  auto
+                  style={{ padding: '0 0.5rem' }}
+                />
+                <Button
+                  icon="pi pi-trash"
+                  className="p-button-rounded p-button-danger p-button-sm"
+                  onClick={() => handleDelete(course.id)}
+                  tooltip="Șterge cursul"
+                  tooltipOptions={{ position: 'top' }}
+                  aria-label={`Șterge cursul ${course.name}`}
+                />
+              </div>
+            </div>
+            {/* Dacă ai alte detalii, le poți pune aici */}
+          </Card>
+        ))
+      ) : (
+        <p style={{ textAlign: 'center', color: '#777', fontStyle: 'italic' }}>
+          Nu sunt lecții disponibile momentan.
+        </p>
+      )}
+    </div>
+  );
+};
+
+
+
+
+
   
 
   
@@ -407,17 +522,19 @@ const CoursePage = () => {
       {selectedClass && selectedDomain && (
         <div className="p-d-flex p-jc-center p-mb-4">
           <Card title="Cursuri disponibile">
-          <CourseList
-            key={coursesUpdated}
-            selectedClass={selectedClass}
-            selectedDomain={selectedDomain}
-            courseTypeFilter={null}
-            courses={lessonsFromDB}
-          />
-
+            <CourseList
+              key={coursesUpdated}
+              selectedClass={selectedClass}
+              selectedDomain={selectedDomain}
+              courses={teacherLessons}
+              token={token}
+              onDeleteSuccess={fetchTeacherLessons}
+            />
           </Card>
+
         </div>
       )}
+
 
       {userRole === USER_ROLE.TEACHER && (
         <>

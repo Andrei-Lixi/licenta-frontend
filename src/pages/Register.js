@@ -22,7 +22,7 @@ function LoginRegister() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         mode: "cors",
-        body: JSON.stringify({ username: email, password }), // dacă backend-ul așteaptă "username"
+        body: JSON.stringify({ username: email, password }), 
       });
 
       const data = await response.json();
