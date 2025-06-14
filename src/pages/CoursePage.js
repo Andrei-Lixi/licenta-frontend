@@ -42,9 +42,25 @@ const [newQuestion, setNewQuestion] = useState('');
 const [newOptions, setNewOptions] = useState(['', '', '', '']);
 const [newCorrectIndex, setNewCorrectIndex] = useState(0);
 
-
-
   const [lessonsFromDB, setLessonsFromDB] = useState([]);
+
+
+
+  const fetchLessonStats = async (lessonId) => {
+  try {
+    const response = await fetch(`/api/lesson/${lessonId}/stats`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to fetch stats');
+    const stats = await response.json();
+    return stats;
+  } catch (error) {
+    console.error(error);
+    return { views: 0, likes: 0, dislikes: 0 }; // fallback
+  }
+};
 
 
   const classOptions = Array.from({ length: 4 }, (_, i) => ({
@@ -71,7 +87,17 @@ const [newCorrectIndex, setNewCorrectIndex] = useState(0);
     if (!response.ok) throw new Error('Eroare la preluarea lecțiilor');
 
     const data = await response.json();
-    setTeacherLessons(data);
+
+    // Pentru fiecare lecție, adaugă stats
+    const lessonsWithStats = await Promise.all(data.map(async lesson => {
+      const stats = await fetchLessonStats(lesson.id);
+      return {
+        ...lesson,
+        stats,
+      };
+    }));
+
+    setTeacherLessons(lessonsWithStats);
 
   } catch (error) {
     console.error("Eroare la preluarea lecțiilor:", error);
@@ -83,6 +109,7 @@ const [newCorrectIndex, setNewCorrectIndex] = useState(0);
     });
   }
 };
+
 
 
 const handleFileUpload = async (event, lessonId) => {
@@ -487,6 +514,10 @@ useEffect(() => {
               onClick={() => handleDelete(course.id)}
             />
           </div>
+          <p>Vizualizări: {course.stats?.views || 0}</p>
+          <p>Like-uri: {course.stats?.likes || 0}</p>
+          <p>Dislike-uri: {course.stats?.dislikes || 0}</p>
+
         </div>
       ))}
     </div>

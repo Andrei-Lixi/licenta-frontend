@@ -7,7 +7,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import BaraMeniu from "../components/BaraMeniu";
 import { Toast } from 'primereact/toast';
 import { useAuthToken } from '../hooks/useAuthToken';
-import { FileUpload } from 'primereact/fileupload';
 
 const CourseStudent = () => {
   const toast = useRef(null);
@@ -22,7 +21,6 @@ const CourseStudent = () => {
 
   const { token } = useAuthToken();
 
-  // Clasa selectata (numerica)
   const classOptions = [
     { label: "Clasa 5", value: 5 },
     { label: "Clasa 6", value: 6 },
@@ -30,14 +28,12 @@ const CourseStudent = () => {
     { label: "Clasa 8", value: 8 },
   ];
 
-  // Domenii disponibile
   const domainOptions = [
     { label: "Matematica", value: "math" },
     { label: "Chimie", value: "chemistry" },
     { label: "Fizica", value: "physics" },
   ];
 
-  // Mapare numerică clasa => string (five, six...)
   const gradeMap = {
     5: "five",
     6: "six",
@@ -45,22 +41,20 @@ const CourseStudent = () => {
     8: "eight",
   };
 
-  // Fetch lecții din backend - toate id-urile și apoi datele pentru fiecare lecție
+
+
+  
   useEffect(() => {
     const fetchAllLessons = async () => {
       try {
-        // 1. Fetch id-uri lecții
         const idsResponse = await fetch('/api/public/lessons');
         if (!idsResponse.ok) throw new Error("Eroare la preluarea id-urilor lecțiilor");
 
         const lessonsData = await idsResponse.json();
-
         if (!Array.isArray(lessonsData)) throw new Error("Format invalid pentru lecții");
 
-        // extragem id-urile din obiecte
         const lessonIds = lessonsData.map(lesson => lesson.id);
 
-        // 2. Pentru fiecare id, fetch info detaliat lecție
         const lessons = [];
 
         for (const id of lessonIds) {
@@ -69,18 +63,18 @@ const CourseStudent = () => {
 
           const lessonData = await res.json();
 
-          // verificăm că avem toate câmpurile necesare
-          if (lessonData?.name && lessonData?.field && lessonData?.grade && lessonData?.filename) {
-            lessons.push({
-              id,
-              name: lessonData.name,
-              field: lessonData.field,
-              grade: lessonData.grade,
-              filename: lessonData.filename,
-              teacherName: lessonData.teacherUser?.name || "N/A", 
-            });
-
-          }
+          // Adaugă views, likes, dislikes (presupunem că vin din backend)
+          lessons.push({
+            id,
+            name: lessonData.name,
+            field: lessonData.field,
+            grade: lessonData.grade,
+            filename: lessonData.filename,
+            teacherName: lessonData.teacherUser?.name || "N/A",
+            views: lessonData.views || 0,
+            likes: lessonData.likes || 0,
+            dislikes: lessonData.dislikes || 0,
+          });
         }
 
         setTeacherLessons(lessons);
@@ -99,12 +93,92 @@ const CourseStudent = () => {
     fetchAllLessons();
   }, []);
 
-  // Filtrare lecții după clasa și domeniu selectate
   const filteredLessons = teacherLessons.filter(
     (lesson) => lesson.grade === gradeMap[selectedClass] && lesson.field === selectedDomain
   );
 
-  // Afișare eroare dacă acces premium fără login
+  // Funcție generică pentru POST la like/dislike/view
+  const postAction = async (lessonId, action) => {
+    try {
+      const res = await fetch(`/api/lesson/${action === 'view' ? 'view' : lessonId + '/' + action}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Adaugă token dacă este necesar
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (!res.ok) throw new Error(`Failed to ${action}`);
+
+      if (action === 'view') {
+        // În cazul view, răspunsul este lecția actualizată
+        const updatedLesson = await res.json();
+        setTeacherLessons(prevLessons =>
+          prevLessons.map(l => (l.id === updatedLesson.id ? { ...l, views: updatedLesson.views } : l))
+        );
+      } else {
+        // Like/Dislike: nu returnează lecția, așa că incrementăm local
+        setTeacherLessons(prevLessons =>
+          prevLessons.map(l => {
+            if (l.id === lessonId) {
+              if (action === 'like') return { ...l, likes: l.likes + 1 };
+              if (action === 'dislike') return { ...l, dislikes: l.dislikes + 1 };
+            }
+            return l;
+          })
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Eroare',
+        detail: `Nu s-a putut efectua acțiunea ${action}`,
+        life: 3000,
+      });
+    }
+  };
+
+
+  const addView = async (lessonId) => {
+  try {
+    const res = await fetch(`/api/lesson/view/${lessonId}`, {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (!res.ok) throw new Error("Failed to add view");
+    const updatedLesson = await res.json();
+    setTeacherLessons(prevLessons =>
+      prevLessons.map(l => l.id === updatedLesson.id ? { ...l, views: updatedLesson.views } : l)
+    );
+  } catch (error) {
+    console.error(error);
+    toast.current?.show({
+      severity: 'error',
+      summary: 'Eroare',
+      detail: 'Nu s-a putut actualiza vizualizarea lecției',
+      life: 3000,
+    });
+  }
+};
+
+
+  const handleView = async (lesson) => {
+    await postAction(lesson.id, 'view');
+    window.open(`http://localhost:8741/uploads/${lesson.filename}`, '_blank');
+  };
+
+  const handleLike = (lesson) => {
+    postAction(lesson.id, 'like');
+  };
+
+  const handleDislike = (lesson) => {
+    postAction(lesson.id, 'dislike');
+  };
+
   if (accesType === "premium" && !isLoggedIn) {
     return (
       <div className="p-d-flex p-jc-center p-ai-center" style={{ height: "100vh", flexDirection: 'column' }}>
@@ -162,34 +236,51 @@ const CourseStudent = () => {
         <div className="p-d-flex p-jc-center p-mb-4" style={{ width: '80%', margin: 'auto' }}>
           <Card title="Lecții disponibile">
             {filteredLessons.length > 0 ? (
-  filteredLessons.map((lesson) => (
-    <Card
-      key={lesson.id}
-      style={{
-        marginBottom: '1rem',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-        borderRadius: '8px',
-        padding: '1rem',
-      }}
-    >
-      <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{lesson.name}</h3>
-        <p><strong>Profesor:</strong> {lesson.teacherName}</p>
-        <Button
-          label="Vezi lecția"
-          icon="pi pi-eye"
-          className="p-button-link"
-          onClick={() => window.open(`http://localhost:8741/uploads/${lesson.filename}`, '_blank')}
-        />
+              filteredLessons.map((lesson) => (
+                <Card
+                  key={lesson.id}
+                  style={{
+                    marginBottom: '1rem',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                  }}
+                >
+                  <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{lesson.name}</h3>
+                  <p><strong>Profesor:</strong> {lesson.teacherName}</p>
+                  
 
-    </Card>
-  ))
-                ) : (
-                <p style={{ textAlign: 'center', color: '#777', fontStyle: 'italic' }}>
-                    Nu sunt lecții disponibile pentru clasa și domeniul selectat.
-                </p>
-                )}
+                  <Button
+                    label="Vezi lecția"
+                    icon="pi pi-eye"
+                    className="p-button-link"
+                    onClick={async () => {
+                      handleView(lesson);
+                      await addView(lesson.id);
+                    }}
 
-
+                    style={{ marginRight: '1rem' }}
+                  />
+                  <Button
+                    label="Like"
+                    icon="pi pi-thumbs-up"
+                    className="p-button-success"
+                    onClick={() => handleLike(lesson)}
+                    style={{ marginRight: '1rem' }}
+                  />
+                  <Button
+                    label="Dislike"
+                    icon="pi pi-thumbs-down"
+                    className="p-button-danger"
+                    onClick={() => handleDislike(lesson)}
+                  />
+                </Card>
+              ))
+            ) : (
+              <p style={{ textAlign: 'center', color: '#777', fontStyle: 'italic' }}>
+                Nu sunt lecții disponibile pentru clasa și domeniul selectat.
+              </p>
+            )}
           </Card>
         </div>
       )}
