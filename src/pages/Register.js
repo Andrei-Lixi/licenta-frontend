@@ -13,6 +13,11 @@ function LoginRegister() {
   const [type, setType] = useState("student"); // default
   const [isLogin, setIsLogin] = useState(true);
   const { saveToken } = useAuthToken();
+    const [name, setName] = useState("");
+    const [school, setSchool] = useState("");
+
+
+
 
   const handleSubmitLogin = async (e) => {
     e.preventDefault();
@@ -45,7 +50,7 @@ function LoginRegister() {
       const response = await fetch("/api/public/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, type }),
+        body: JSON.stringify({ email, password, type, name, school }),
       });
 
       const data = await response.json();
@@ -65,8 +70,14 @@ function LoginRegister() {
   };
 
   return (
-    <div className="container">
-      <h1 className="heading">Platforma de cont</h1>
+    <div className="container" style={{
+      backgroundImage: 'url(/images/login.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      minHeight: '100vh',
+      width: '100%',
+    }}>
+      <h1 className="heading" >Platforma de cont</h1>
 
       <div className="form-container">
         {message && <FlashMessage type={message.type} message={message.text} />}
@@ -101,6 +112,10 @@ function LoginRegister() {
                   />
                 </div>
               </div>
+
+
+             
+
 
               <button type="submit" className="button">Autentifică-te</button>
               <p className="redirect-text">Nu ai un cont? <span onClick={() => setIsLogin(false)} className="link">Înregistrează-te</span></p>
@@ -154,6 +169,33 @@ function LoginRegister() {
                 </div>
               </div>
 
+
+               <div className="input-group">
+                <label className="label">Nume complet:</label>
+                <div className="input-container">
+                  <input
+                    className="input"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="label">Școală:</label>
+                <div className="input-container">
+                  <input
+                    className="input"
+                    type="text"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
               <button type="submit" className="button">Înregistrează-te</button>
               <p className="redirect-text">Ai deja un cont? <span onClick={() => setIsLogin(true)} className="link">Autentifică-te</span></p>
             </form>
@@ -164,5 +206,8 @@ function LoginRegister() {
     </div>
   );
 }
+
+
+
 
 export default LoginRegister;

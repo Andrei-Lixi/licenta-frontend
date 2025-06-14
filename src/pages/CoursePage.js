@@ -26,7 +26,7 @@ const CoursePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedDomain, setSelectedDomain] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+const [showForm, setShowForm] = useState(false);
   const [courseType, setCourseType] = useState(null);
   const [selectedClassForm, setSelectedClassForm] = useState(null);
   const [selectedDomainForm, setSelectedDomainForm] = useState(null);
@@ -34,8 +34,14 @@ const CoursePage = () => {
   const [coursesUpdated, setCoursesUpdated] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [teacherLessons, setTeacherLessons] = useState([]);
+const [currentQuizName, setCurrentQuizName] = useState('');
 
   const { token, getRol } = useAuthToken();
+const [currentQuizId, setCurrentQuizId] = useState(null);
+const [newQuestion, setNewQuestion] = useState('');
+const [newOptions, setNewOptions] = useState(['', '', '', '']);
+const [newCorrectIndex, setNewCorrectIndex] = useState(0);
+
 
 
   const [lessonsFromDB, setLessonsFromDB] = useState([]);
@@ -120,9 +126,13 @@ const handleFileUpload = async (event, lessonId) => {
 
 
 
+
+
+
 useEffect(() => {
   if (userRole === USER_ROLE.TEACHER && token) {
     fetchTeacherLessons();
+    
   }
 }, [userRole, token]);
 
@@ -208,6 +218,62 @@ useEffect(() => {
     );
   }
 
+
+  const handleAddQuizQuestion = async () => {
+  if (!newQuestion.trim() || newOptions.some(opt => !opt.trim())) {
+    toast.current.show({
+      severity: 'warn',
+      summary: 'Date incomplete',
+      detail: 'Completează toate câmpurile întrebării și răspunsurilor.',
+      life: 3000,
+    });
+    return;
+  }
+
+  try {
+    const payload = {
+      question: newQuestion,
+      possibleAnswers: newOptions,
+      correctAnswerIndex: newCorrectIndex,
+    };
+
+    const response = await fetch(`/api/teacher/quiz_question/add/${currentQuizId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error('Eroare la adăugarea întrebării');
+
+    toast.current.show({
+      severity: 'success',
+      summary: 'Întrebare adăugată',
+      detail: 'Întrebarea a fost adăugată cu succes.',
+      life: 3000,
+    });
+
+    // Reset formular
+    setNewQuestion('');
+    setNewOptions(['', '', '', '']);
+    setNewCorrectIndex(0);
+
+    // Opțional: actualizează lista lecțiilor sau quiz-urilor dacă vrei
+
+  } catch (error) {
+    toast.current.show({
+      severity: 'error',
+      summary: 'Eroare',
+      detail: 'Întrebarea nu a putut fi adăugată.',
+      life: 3000,
+    });
+  }
+};
+
+
+
   const handleAddLesson = async () => {
   try {
     const classMap = {
@@ -241,17 +307,8 @@ useEffect(() => {
       life: 3000,
     });
 
-    const newLesson = {
-      id: Date.now(),
-      title: courseTitle,
-      type: "curs",
-      grade: classMap[selectedClassForm],
-      field: selectedDomainForm,
-    };
-
-    const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
-    existingCourses.push(newLesson);
-    localStorage.setItem("courses", JSON.stringify(existingCourses));
+    // Actualizez lecțiile imediat
+    await fetchTeacherLessons(); // ← forțez actualizarea din server
 
     setShowForm(false);
     resetForm();
@@ -280,55 +337,34 @@ useEffect(() => {
   }
 
   try {
-    const payload = {
-      name: courseTitle,
-      class: selectedClassForm,
-      domain: selectedDomainForm,
-      questions: quizQuestions,
-    };
-
-    // 🔸 1. Trimite la server
-    const response = await fetch('/api/teacher/quiz/add', {
+    const createQuizResponse = await fetch('/api/teacher/quiz/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name: courseTitle }),
     });
 
-    const responseData = await response.json().catch(() => ({}));
-    console.log("Payload trimis:", payload);
-    console.log("Status răspuns:", response.status);
-    console.log("Răspuns server:", responseData);
+    if (!createQuizResponse.ok) throw new Error('Eroare la crearea quizului');
 
-    if (!response.ok) throw new Error('Eroare la adăugare');
+    const createQuizData = await createQuizResponse.json();
 
-    // ✅ 2. Salvează local în localStorage
-    const newQuiz = {
-  id: responseData.id, // ✅ ID-ul real de la backend
-  title: courseTitle,
-  type: "quiz",
-  class: selectedClassForm,
-  domain: selectedDomainForm,
-  questions: quizQuestions,
-};
+    const quizId = createQuizData.id;
+    if (!quizId) throw new Error('ID quiz invalid primit de la server');
 
+    setCurrentQuizId(quizId);
+    setCurrentQuizName(courseTitle);  // Salvezi și numele quizului
 
-    const existingCourses = JSON.parse(localStorage.getItem("courses")) || [];
-    existingCourses.push(newQuiz);
-    localStorage.setItem("courses", JSON.stringify(existingCourses));
-
-    // 🔔 Feedback
     toast.current.show({
       severity: 'success',
       summary: 'Quiz adăugat',
-      detail: `Quizul "${courseTitle}" a fost adăugat cu succes.`,
+      detail: `Quizul "${courseTitle}" a fost creat cu succes. Introdu prima întrebare.`,
       life: 3000,
     });
 
-    resetForm();
-    setShowForm(false);
+    setCourseTitle('');
+    // nu inchidem dialogul, ca sa adaugam intrebare
 
   } catch (error) {
     console.error(error);
@@ -340,6 +376,7 @@ useEffect(() => {
     });
   }
 };
+
 
   
   
@@ -426,42 +463,38 @@ useEffect(() => {
       <Toast ref={toast} />
       {filteredCourses.length > 0 ? (
         filteredCourses.map((course) => (
-          <Card
-            key={course.id}
-            style={{
-              marginBottom: '1rem',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-              borderRadius: '8px',
-              padding: '1rem',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, textTransform: 'capitalize', flex: 1 }}>
-                {course.name}
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <FileUpload
-                  name="file"
-                  customUpload
-                  uploadHandler={(e) => handleFileUpload(e, course.id)}
-                  maxFileSize={10000000}
-                  mode="basic"
-                  chooseLabel="Upload"
-                  auto
-                  style={{ padding: '0 0.5rem' }}
-                />
-                <Button
-                  icon="pi pi-trash"
-                  className="p-button-rounded p-button-danger p-button-sm"
-                  onClick={() => handleDelete(course.id)}
-                  tooltip="Șterge cursul"
-                  tooltipOptions={{ position: 'top' }}
-                  aria-label={`Șterge cursul ${course.name}`}
-                />
-              </div>
-            </div>
-            {/* Dacă ai alte detalii, le poți pune aici */}
-          </Card>
+          <div className="bubble-container">
+  {filteredCourses.length > 0 ? (
+    <div className="bubble-grid">
+      {filteredCourses.map((course) => (
+        <div className="course-bubble" key={course.id}>
+          <h3>{course.name}</h3>
+          <p>Clasa: {classMapping[course.grade]}</p>
+          <p>Domeniu: {course.field}</p>
+          <div className="bubble-actions">
+            <FileUpload
+              name="file"
+              customUpload
+              uploadHandler={(e) => handleFileUpload(e, course.id)}
+              maxFileSize={10000000}
+              mode="basic"
+              chooseLabel="Upload"
+              auto
+            />
+            <Button
+              icon="pi pi-trash"
+              className="p-button-rounded p-button-danger p-button-sm"
+              onClick={() => handleDelete(course.id)}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p>Nu sunt lecții disponibile momentan.</p>
+  )}
+</div>
+
         ))
       ) : (
         <p style={{ textAlign: 'center', color: '#777', fontStyle: 'italic' }}>
@@ -483,145 +516,203 @@ useEffect(() => {
   
 
   return (
-    <div>
-      <BaraMeniu />
-      <Toast ref={toast} />
+  <div
+    style={{
+      backgroundImage: 'url(/images/home.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      minHeight: '100vh',
+      width: '100%',
+    }}
+  >
+    <BaraMeniu />
+    <Toast ref={toast} />
 
-      <h1 className="p-text-center">
-        {userRole === USER_ROLE.TEACHER && "Bun venit, domnule/doamnă profesor"}
-        {userRole === USER_ROLE.STUDENT && "Bun venit pe calea învățării, elevule"}
-        {userRole === USER_ROLE.NONE && "Bun venit pe calea învățării, persoană anonimă"}
-      </h1>
+    <h1 className="text-3xl font-bold mb-6 text-center mt-8">
+      Bun venit, doamna/domnule profesor
+    </h1>
 
-      <div className="p-d-flex p-jc-center p-mb-4">
-        <Card>
-          <Dropdown
-            value={selectedClass}
-            options={classOptions}
-            onChange={(e) => setSelectedClass(e.value)}
-            placeholder="Selectează Clasa"
-            className="p-mb-2"
-          />
-        </Card>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '2rem',
+      }}
+    >
+      {/* Coloana 1: Adăugare Lecție */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <Button
+          label="Adaugă Lecție"
+          className="p-button-lg p-button-primary"
+          onClick={() => {
+            setCourseType("curs");
+            setShowForm(true);
+          }}
+        />
       </div>
 
-      {selectedClass && (
+      {/* Coloana 2: Selectare clasă, domeniu și cursuri */}
+      <div style={{ flex: 1 }}>
         <div className="p-d-flex p-jc-center p-mb-4">
-          <Card title="Selectează un domeniu">
+          <Card>
             <Dropdown
-              value={selectedDomain}
-              options={domainOptions}
-              onChange={(e) => setSelectedDomain(e.value)}
-              placeholder="Selectează Domeniu"
-              className="p-mb-2"
-            />
-          </Card>
-        </div>
-      )}
-
-      {selectedClass && selectedDomain && (
-        <div className="p-d-flex p-jc-center p-mb-4">
-          <Card title="Cursuri disponibile">
-            <CourseList
-              key={coursesUpdated}
-              selectedClass={selectedClass}
-              selectedDomain={selectedDomain}
-              courses={teacherLessons}
-              token={token}
-              onDeleteSuccess={fetchTeacherLessons}
-            />
-          </Card>
-
-        </div>
-      )}
-
-
-      {userRole === USER_ROLE.TEACHER && (
-        <>
-          <Button
-            label="+"
-            className="p-button-rounded p-button-primary"
-            style={{ position: "fixed", bottom: 20, left: 20 }}
-            onClick={() => setShowForm(true)}
-          />
-          <Dialog
-            header="Adaugă un curs"
-            visible={showForm}
-            style={{ width: '50vw' }}
-            onHide={() => setShowForm(false)}
-          >
-            <InputText
-              placeholder="Titlul cursului"
-              value={courseTitle}
-              onChange={(e) => setCourseTitle(e.target.value)}
-              className="p-mb-2 p-inputtext-sm"
-              style={{ width: '100%' }}
-            />
-            <Dropdown
-              value={courseType}
-              options={[{ label: "Quiz", value: "quiz" }, { label: "Curs", value: "curs" }]}
-              onChange={(e) => setCourseType(e.value)}
-              placeholder="Tipul"
-              className="p-mb-2"
-            />
-            <Dropdown
-              value={selectedClassForm}
+              value={selectedClass}
               options={classOptions}
-              onChange={(e) => setSelectedClassForm(e.value)}
-              placeholder="Clasa"
+              onChange={(e) => setSelectedClass(e.value)}
+              placeholder="Selectează Clasa"
               className="p-mb-2"
             />
-            <Dropdown
-              value={selectedDomainForm}
-              options={domainOptions}
-              onChange={(e) => setSelectedDomainForm(e.value)}
-              placeholder="Domeniu"
-              className="p-mb-2"
-            />
-            {courseType === "quiz" && (
-              <>
-                <Button label="Adaugă Întrebare" onClick={handleAddQuestion} className="p-button-sm p-button-secondary p-mb-3" />
-                {quizQuestions.map((q, qIdx) => (
-                  <div key={qIdx} className="p-mb-3">
-                    <InputText
-                      placeholder={`Întrebarea ${qIdx + 1}`}
-                      value={q.question}
-                      onChange={(e) => updateQuestion(qIdx, 'question', e.target.value)}
-                      className="p-mb-2"
-                      style={{ width: '100%' }}
-                    />
-                    {q.options.map((opt, oIdx) => (
-                      <div key={oIdx} className="p-field-radiobutton p-mb-1">
-                        <input
-                          type="radio"
-                          name={`correct-${qIdx}`}
-                          checked={q.correct === oIdx}
-                          onChange={() => updateQuestion(qIdx, 'correct', oIdx)}
-                          style={{ marginRight: '5px' }}
-                        />
-                        <InputText
-                          placeholder={`Opțiunea ${oIdx + 1}`}
-                          value={opt}
-                          onChange={(e) => updateOption(qIdx, oIdx, e.target.value)}
-                          style={{ width: '80%' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </>
-            )}
-            <Button
-             label={courseType === "quiz" ? "Salvează Quiz" : "Adaugă Curs"}
-             onClick={courseType === "quiz" ? handleAddQuiz : handleAddLesson}
-              className="p-button-success"
-              />
+          </Card>
+        </div>
 
-          </Dialog>
+        {selectedClass && (
+          <div className="p-d-flex p-jc-center p-mb-4">
+            <Card title="Selectează un domeniu">
+              <Dropdown
+                value={selectedDomain}
+                options={domainOptions}
+                onChange={(e) => setSelectedDomain(e.value)}
+                placeholder="Selectează Domeniu"
+                className="p-mb-2"
+              />
+            </Card>
+          </div>
+        )}
+
+        {selectedClass && selectedDomain && (
+          <div className="p-d-flex p-jc-center p-mb-4">
+            <Card title="Cursuri disponibile">
+              <CourseList
+                key={coursesUpdated}
+                selectedClass={selectedClass}
+                selectedDomain={selectedDomain}
+                courses={teacherLessons}
+                token={token}
+                onDeleteSuccess={fetchTeacherLessons}
+              />
+            </Card>
+          </div>
+        )}
+        
+
+
+
+        
+      </div>
+
+      
+
+      {/* Coloana 3: Adăugare Quiz */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <Button
+          label="Adaugă Quiz"
+          className="p-button-lg p-button-secondary"
+          onClick={() => {
+            setCourseType("quiz");
+            setShowForm(true);
+          }}
+        />
+
+        {currentQuizId && (
+  <div
+    className="question-bubble"
+    style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}
+  >
+    
+    <p>
+      <strong>
+        Introdu o întrebare, cele 4 răspunsuri și selectează răspunsul corect la quizul "{currentQuizName}":
+      </strong>
+    </p>
+
+    <InputText
+      placeholder="Întrebare"
+      value={newQuestion}
+      onChange={(e) => setNewQuestion(e.target.value)}
+      style={{ width: '100%', marginBottom: '0.5rem' }}
+    />
+
+    {newOptions.map((opt, idx) => (
+      <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <input
+          type="radio"
+          name="correctAnswer"
+          checked={newCorrectIndex === idx}
+          onChange={() => setNewCorrectIndex(idx)}
+          style={{ marginRight: '0.5rem' }}
+        />
+        <InputText
+          placeholder={`Opțiunea ${idx + 1}`}
+          value={opt}
+          onChange={(e) => {
+            const updated = [...newOptions];
+            updated[idx] = e.target.value;
+            setNewOptions(updated);
+          }}
+          style={{ flex: 1 }}
+        />
+      </div>
+    ))}
+
+    <Button label="Adaugă Întrebare" onClick={handleAddQuizQuestion} />
+  </div>
+)}
+
+
+        
+      </div>
+      
+
+    </div>
+
+    {/* Dialog comun pentru lecție sau quiz */}
+    <Dialog
+      header={`Adaugă ${courseType === "quiz" ? "Quiz" : "Lecție"}`}
+      visible={showForm}
+      style={{ width: '50vw' }}
+      onHide={() => setShowForm(false)}
+    >
+      <InputText
+        placeholder={`Titlul ${courseType === "quiz" ? "quizului" : "lecției"}`}
+        value={courseTitle}
+        onChange={(e) => setCourseTitle(e.target.value)}
+        className="p-mb-2 p-inputtext-sm"
+        style={{ width: '100%' }}
+      />
+      {courseType === "curs" && (
+        <>
+          <Dropdown
+            value={selectedClassForm}
+            options={classOptions}
+            onChange={(e) => setSelectedClassForm(e.value)}
+            placeholder="Clasa"
+            className="p-mb-2"
+          />
+          <Dropdown
+            value={selectedDomainForm}
+            options={domainOptions}
+            onChange={(e) => setSelectedDomainForm(e.value)}
+            placeholder="Domeniu"
+            className="p-mb-2"
+          />
         </>
       )}
-    </div>
-  );
+      {courseType === "quiz" && (
+  <p>Introduceți titlul lecției aferente testului.</p>
+)}
+      <Button
+        label={courseType === "quiz" ? "Salvează Quiz" : "Adaugă Lecție"}
+        onClick={courseType === "quiz" ? handleAddQuiz : handleAddLesson}
+        className="p-button-success"
+      />
+    </Dialog>
+  </div>
+
+
+
+);
+
+  
 };
 
 export default CoursePage;

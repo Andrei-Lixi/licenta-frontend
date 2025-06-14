@@ -1,42 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEnvelope, FaUser, FaCalendarAlt } from "react-icons/fa";
-import { useAuthToken } from "../hooks/useAuthToken"; // Hook pentru gestionarea token-ului
+import { FaEnvelope, FaUser, FaCalendarAlt, FaSchool } from "react-icons/fa";
+import { useAuthToken } from "../hooks/useAuthToken";
 import FlashMessage from "../components/FlashMessage";
-import "../css/Home.css";
 import BaraMeniu from "../components/BaraMeniu";
 
-function Settings() {
-  const [userData, setUserData] = useState(null); // Datele utilizatorului
-  const [message, setMessage] = useState(null);
-  const [loading, setLoading] = useState(true); // Stare pentru a gestiona încărcarea datelor
-  const [darkMode, setDarkMode] = useState(false); // Starea pentru dark mode
-  const navigate = useNavigate();
-  const { token } = useAuthToken(); // Token-ul utilizatorului din hook
+import { Card } from 'primereact/card';
+import { Panel } from 'primereact/panel';
+import { Divider } from 'primereact/divider';
+import { Tag } from 'primereact/tag';
+import 'primereact/resources/themes/lara-light-indigo/theme.css'; // sau orice temă vrei
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import "../css/Home.css";
 
-  // Funcție pentru a obține datele utilizatorului de la endpoint-ul /api/me
+function Settings() {
+  const [userData, setUserData] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const navigate = useNavigate();
+  const { token } = useAuthToken();
+
   const fetchUserData = async () => {
     try {
       const response = await fetch("/api/me", {
         method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }, // Trimiterea tokenului pentru autentificare
+        headers: { "Authorization": `Bearer ${token}` },
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setUserData(data); // Setăm datele utilizatorului
+        setUserData(data);
       } else {
         setMessage({ type: "danger", text: data.message || "Eroare la încărcarea datelor utilizatorului!" });
       }
     } catch (error) {
       setMessage({ type: "danger", text: "Eroare de rețea!" });
     } finally {
-      setLoading(false); // Indiferent de rezultat, oprește încărcarea
+      setLoading(false);
     }
   };
 
-  // Încărcăm datele utilizatorului la montarea componentei
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -45,42 +51,55 @@ function Settings() {
     }
   }, [token, navigate]);
 
-  // Funcția pentru a schimba starea dark mode
   const handleToggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
 
   return (
     <div className={darkMode ? "dark-mode" : "light-mode"}>
-     
       <BaraMeniu onToggleDarkMode={handleToggleDarkMode} isDarkMode={darkMode} />
-      <br></br>
-      <div className="container">
-        <h1 className="heading">Setările contului</h1>
+      <div className="container" style={{
+        backgroundImage: 'url(/images/seting.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: '100vh',
+        padding: '2rem'
+      }}>
+        <h1 className="heading" style={{ color: "#fff", textShadow: "1px 1px 4px #000" }}>Date Personale</h1>
 
         {message && <FlashMessage type={message.type} message={message.text} />}
 
         {loading ? (
-          <p>Se încarcă datele...</p> // Mesaj de încărcare până când datele sunt disponibile
+          <p style={{ color: "#fff" }}>Se încarcă datele...</p>
         ) : userData ? (
-          <div className="user-info p-mt-3">
-            <div className="info-item p-d-flex p-jc-start p-ai-center p-mb-3">
-              <FaEnvelope className="icon" />
-              <span className="p-ml-2">Email: {userData.email}</span>
-            </div>
-            <div className="info-item p-d-flex p-jc-start p-ai-center p-mb-3">
-              <FaUser className="icon" />
-              <span className="p-ml-2">Tip cont: {userData.accountType}</span>
-            </div>
-            <div className="info-item p-d-flex p-jc-start p-ai-center p-mb-3">
-              <FaCalendarAlt className="icon" />
-              <span className="p-ml-2">
-                Cont creat pe: {new Date(userData.createdAt).toLocaleDateString()}
-              </span>
-            </div>
+          <div className="user-info" style={{
+            maxWidth: "600px",
+            margin: "0 auto",
+            backdropFilter: "blur(8px)",
+            backgroundColor: "rgba(0,0,0,0.4)",
+            borderRadius: "10px",
+            padding: "1rem"
+          }}>
+            <Card title={userData.name} subTitle="Profil utilizator" className="mb-3" style={{ color: "white" }}>
+              <Panel header="Informații cont" toggleable>
+                <div className="p-mb-2">
+                  <FaEnvelope style={{ marginRight: '0.5rem' }} />
+                  <strong>Email:</strong> {userData.email}
+                </div>
+                <div className="p-mb-2">
+                  <FaUser style={{ marginRight: '0.5rem' }} />
+                  <strong>Nume</strong> <Tag severity="info" value={userData.name} />
+                </div>
+                <div className="p-mb-2">
+                  <FaSchool style={{ marginRight: '0.5rem' }} />
+                  <strong>Școală:</strong> {userData.school}
+                </div>
+                
+              </Panel>
+            </Card>
           </div>
         ) : (
-          <p>Nu s-au găsit date pentru utilizatorul curent.</p>
+          <p style={{ color: "#fff" }}>Nu s-au găsit date pentru utilizatorul curent.</p>
         )}
       </div>
     </div>

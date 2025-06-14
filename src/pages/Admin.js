@@ -8,6 +8,7 @@ function Admin() {
   const navigate = useNavigate();
   const [asteptari, setAsteptari] = useState([]);
   const [conturi, setConturi] = useState([]);
+  const [conturiElevi, setConturiElevi] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -35,7 +36,7 @@ function Admin() {
   useEffect(() => {
     const token = localStorage.getItem("authToken");
 
-    fetch("/api/admin/user/all", {
+    fetch("/api/admin/user/teacher", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -50,6 +51,26 @@ function Admin() {
       .catch((err) => {
         console.error("Eroare la încărcarea tuturor conturilor:", err);
       });
+
+
+fetch("/api/admin/user/students", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+})
+  .then((res) => {
+    if (!res.ok) throw new Error("Eroare la încărcarea conturilor elevi");
+    return res.json();
+  })
+  .then((data) => {
+    setConturiElevi(data);
+  })
+  .catch((err) => {
+    console.error("Eroare la încărcarea tuturor conturilor elevi:", err);
+  });
+
+
+
   }, []);
 
   const handleLogout = () => {
@@ -76,23 +97,7 @@ function Admin() {
       });
   };
 
-  const handleReject = (id) => {
-    const token = localStorage.getItem("authToken");
-
-    fetch(`/api/admin/user/confirm/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Respingerea a eșuat");
-        setAsteptari((prev) => prev.filter((u) => u.id !== id));
-      })
-      .catch((err) => {
-        console.error("Eroare la respingere:", err);
-      });
-  };
+  
 
   // ✅ Șterge un cont existent
   const handleDeleteUser = (id) => {
@@ -133,7 +138,13 @@ function Admin() {
   );
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{
+          backgroundImage: 'url(/images/admin.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          minHeight: '100vh',
+          width: '100%',
+        }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h1>Panou Admin</h1>
         <Button
@@ -153,18 +164,43 @@ function Admin() {
         <DataTable value={asteptari} paginator rows={5} responsiveLayout="scroll" emptyMessage="Nu există cereri">
           <Column field="id" header="ID" style={{ width: "5rem" }} />
           <Column field="email" header="Email" />
+          <Column field="name" header="Nume" />
+          <Column field="school" header="Școală" />
           <Column body={actiuniTemplate} header="Acțiuni" style={{ width: "10rem" }} />
         </DataTable>
+
       </section>
 
       <section>
-        <h2>Toate conturile create</h2>
+        <h2>Toate conturile create(Profesori)</h2>
         <DataTable value={conturi} paginator rows={3} responsiveLayout="scroll" emptyMessage="Nu există conturi">
           <Column field="id" header="ID" style={{ width: "5rem" }} />
           <Column field="email" header="Email" />
+          <Column field="name" header="Nume" />
+          <Column field="school" header="Școală" />
           <Column body={deleteButtonTemplate} header="Șterge" style={{ width: "6rem" }} />
         </DataTable>
       </section>
+
+
+      <section>
+        <h2>Toate conturile create (Elevi)</h2>
+        <DataTable
+          value={conturiElevi}
+          paginator
+          rows={3}
+          responsiveLayout="scroll"
+          emptyMessage="Nu există conturi"
+        >
+          <Column field="id" header="ID" style={{ width: "5rem" }} />
+          <Column field="email" header="Email" />
+          <Column field="name" header="Nume" />
+          <Column field="school" header="Școală" />
+          <Column body={deleteButtonTemplate} header="Șterge" style={{ width: "6rem" }} />
+        </DataTable>
+      </section>
+
+
     </div>
   );
 }

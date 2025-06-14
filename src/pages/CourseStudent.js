@@ -118,7 +118,13 @@ const CourseStudent = () => {
   }
 
   return (
-    <div>
+    <div style={{
+      backgroundImage: 'url(/images/sala.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      minHeight: '100vh',
+      width: '100%',
+    }}>
       <BaraMeniu />
       <Toast ref={toast} />
 

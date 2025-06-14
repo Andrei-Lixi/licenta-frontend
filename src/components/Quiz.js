@@ -1,93 +1,101 @@
-import React, { useState } from 'react';
-import { Button } from 'primereact/button';
+import React, { useState } from "react";
+import { ListBox } from "primereact/listbox";
+import { Button } from "primereact/button";
 
 const Quiz = ({ questions }) => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [showCorrect, setShowCorrect] = useState(false);
-  const [finished, setFinished] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showAnswer, setShowAnswer] = useState(false);
 
-  const handleOptionSelect = (optionIdx) => {
-    if (showCorrect) return;
-    setSelectedOption(optionIdx);
-  };
+  if (!questions || questions.length === 0) {
+    return <p>Acest quiz nu are întrebări disponibile.</p>;
+  }
 
-  const handleNext = () => {
-    if (!showCorrect) {
-      setShowCorrect(true); // Afișează răspunsul corect
-    } else {
-      // Trecem la următoarea întrebare sau terminăm
-      if (currentQuestion + 1 < questions.length) {
-        setCurrentQuestion(currentQuestion + 1);
-        setSelectedOption(null);
-        setShowCorrect(false);
-      } else {
-        setFinished(true);
-      }
+  const currentQuestion = questions[currentIndex];
+
+  const handleAnswerSelect = (e) => {
+    if (!showAnswer) {
+      setSelectedAnswer(e.value);
+      setShowAnswer(true);
     }
   };
 
-  if (finished) {
-    return <p className="text-center font-semibold text-green-700">Ai terminat quiz-ul! 🎉</p>;
-  }
+  const handleNext = () => {
+    setSelectedAnswer(null);
+    setShowAnswer(false);
 
-  const question = questions[currentQuestion];
-  const correctIndex = question.correct;
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      alert("Ai terminat quiz-ul!");
+    }
+  };
+
+  const options = currentQuestion.possibleAnswers.map((ans, idx) => ({
+    label: ans,
+    value: idx,
+  }));
+
+  const itemTemplate = (option) => {
+    if (!showAnswer) return option.label;
+
+    if (option.value === currentQuestion.correctAnswerIndex) {
+      return <span style={{ color: "green", fontWeight: "bold" }}>{option.label}</span>;
+    }
+
+    if (option.value === selectedAnswer && selectedAnswer !== currentQuestion.correctAnswerIndex) {
+      return <span style={{ color: "red", fontWeight: "bold" }}>{option.label}</span>;
+    }
+
+    return <span>{option.label}</span>;
+  };
 
   return (
-    <div className="mb-6">
-      <p className="font-semibold mb-4">{currentQuestion + 1}. {question.question}</p>
+    <div
+  style={{
+    width: "320px",
+    padding: "20px",
+    marginBottom: "20px",
+    backgroundColor: "rgba(255, 255, 255, 0.05)", // puțin transparent
+    borderRadius: "12px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  }}
+>
 
-      {question.options.map((opt, idx) => {
-        const isSelected = selectedOption === idx;
-        const isCorrect = idx === correctIndex;
+      <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#ddd' }}>
+  Întrebarea {currentIndex + 1} din {questions.length}
+</h3>
+      <p
+  style={{
+    fontSize: '1.25rem',
+    fontWeight: '500',
+    color: '#fff',
+    marginBottom: '0.5rem',
+    textAlign: 'center',
+  }}
+>
+  {currentQuestion.question}
+</p>
 
-        let optionStyle = "block p-2 border rounded-lg cursor-pointer mb-2";
-        if (showCorrect) {
-          if (isCorrect) {
-            optionStyle += " bg-green-100 border-green-400 text-green-800";
-          } else if (isSelected && !isCorrect) {
-            optionStyle += " bg-red-100 border-red-400 text-red-700";
-          } else {
-            optionStyle += " border-gray-300";
-          }
-        } else if (isSelected) {
-          optionStyle += " bg-blue-100 border-blue-400";
-        } else {
-          optionStyle += " border-gray-300";
-        }
-
-        return (
-          <label key={idx} className={optionStyle}>
-            <input
-              type="radio"
-              name="option"
-              value={idx}
-              checked={isSelected}
-              onChange={() => handleOptionSelect(idx)}
-              className="mr-2"
-              disabled={showCorrect}
-            />
-            {opt}
-          </label>
-        );
-      })}
-
-      {showCorrect && (
-        <p className="mt-2 text-sm text-blue-700">
-          Răspunsul corect: <strong>{question.options[correctIndex]}</strong>
-        </p>
-      )}
+      <ListBox
+        options={options}
+        value={selectedAnswer}
+        onChange={handleAnswerSelect}
+        itemTemplate={itemTemplate}
+        multiple={false}
+        disabled={showAnswer}
+        style={{ width: "100%" }}
+      />
 
       <Button
-  label={showCorrect ? 'Următoarea întrebare' : 'Afișează răspunsul corect'}
-  icon={showCorrect ? 'pi pi-arrow-right' : 'pi pi-check'}
-  onClick={handleNext}
-  disabled={selectedOption === null && !showCorrect}
-  className="mt-4"
-  severity={showCorrect ? 'info' : 'success'}
-/>
-
+        label={currentIndex === questions.length - 1 ? "Finalizare" : "Următoarea"}
+        onClick={handleNext}
+        disabled={!showAnswer}
+        className="mt-3"
+      />
     </div>
   );
 };

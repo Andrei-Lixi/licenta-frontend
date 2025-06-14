@@ -7,15 +7,15 @@
 
 body {
   background: linear-gradient(135deg, #f4f7fb, #ffffff);
+   
   font-family: 'Arial', sans-serif;
-  min-height: 100vh;
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  animation: fadeIn 1s ease-out; 
+  min-height: 100vh;
+  overflow: auto;
+
+  animation: fadeIn 1s ease-out;
 }
+
 
 body.dark-mode {
   background: linear-gradient(135deg, #121212, #1e1e1e);
@@ -59,17 +59,21 @@ body {
 
 /* Containerul principal pentru toate elementele */
 .container {
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  
   padding: 50px 30px;
-  background: rgba(255, 255, 255, 0.85); /* Background semi-transparent */
-  backdrop-filter: blur(15px); /* Efect de blur pe fundal */
-  border-radius: 20px;
-  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
-  width: 80%;
-  max-width: 900px;
+  background: rgba(255, 255, 255, 0.85); /* fundal semi-transparent */
+  backdrop-filter: blur(15px); /* efect de blur */
+  border-radius: 0; /* colțuri drepte, pentru full-screen */
+  box-shadow: none; /* evităm umbrele dacă e pe tot ecranul */
+  text-align: center;
   transition: all 0.3s ease-in-out;
-  animation: slideInUp 0.8s ease-out; 
+  animation: slideInUp 0.8s ease-out;
+  overflow-y: auto; /* scroll intern dacă e nevoie */
 }
+
+
 
 /* Efecte la hover pentru container */
 .container:hover {
@@ -147,6 +151,87 @@ body {
   transform: translate(-50%, -50%) scaleX(0);
   transition: all 0.3s ease;
 }
+
+
+/* Stil meniu - light mode */
+.p-menubar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  animation: slideInDown 0.6s ease-out;
+}
+
+.p-menubar .p-menuitem-link {
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: #2c3e50;
+  transition: background 0.3s, color 0.3s;
+  border-radius: 8px;
+}
+
+.p-menubar .p-menuitem-link:hover {
+  background: #eaf2f8;
+  color: #2980b9;
+}
+
+.p-menubar .pi {
+  margin-right: 2rem;
+  font-size: 1.5rem;
+}
+
+/* Stiluri pentru submeniuri */
+.p-submenu-list {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0;
+}
+
+/* Dark mode pentru meniu */
+body.dark-mode .p-menubar {
+  background: rgba(30, 30, 30, 0.95);
+  border-bottom: 1px solid #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .p-menubar .p-menuitem-link {
+  color: #ddd;
+}
+
+body.dark-mode .p-menubar .p-menuitem-link:hover {
+  background: #444;
+  color: #fff;
+}
+
+body.dark-mode .p-submenu-list {
+  background: #2a2a2a;
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Animație de slide în jos pentru meniu */
+@keyframes slideInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Spațiu sub meniu ca să nu acopere conținutul */
+.container {
+  padding-top: 120px; /* înălțimea menubarului + spațiu */
+}
+
 
 .p-button:hover {
   background: #2980b9;
