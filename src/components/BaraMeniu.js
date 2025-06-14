@@ -60,7 +60,7 @@ export default function BaraMeniu({ onToggleDarkMode, isDarkMode }) {
     {
       label: "Contact",
       icon: "pi pi-envelope",
-      command: () => navigate("/Chat"),
+      command: () => navigate("/ChatPage"),
     },
   ];
 

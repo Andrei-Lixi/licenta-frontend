@@ -77,7 +77,9 @@ const CourseStudent = () => {
               field: lessonData.field,
               grade: lessonData.grade,
               filename: lessonData.filename,
+              teacherName: lessonData.teacherUser?.name || "N/A", 
             });
+
           }
         }
 
@@ -171,12 +173,14 @@ const CourseStudent = () => {
       }}
     >
       <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{lesson.name}</h3>
-      <Button
-        label="Vezi lecția"
-        icon="pi pi-eye"
-        className="p-button-link"
-        onClick={() => window.open(`http://localhost:8741/uploads/${lesson.filename}`, '_blank')}
-      />
+        <p><strong>Profesor:</strong> {lesson.teacherName}</p>
+        <Button
+          label="Vezi lecția"
+          icon="pi pi-eye"
+          className="p-button-link"
+          onClick={() => window.open(`http://localhost:8741/uploads/${lesson.filename}`, '_blank')}
+        />
+
     </Card>
   ))
                 ) : (
