@@ -52,12 +52,12 @@ body.dark-mode .p-button:hover {
   background: #777;
 }
 
-/* Reparăm scroll-ul și overflow-ul */
+
 body {
   overflow: auto;
 }
 
-/* Containerul principal pentru toate elementele */
+
 .container {
   width: 100vw;
   height: 100vh;
@@ -66,11 +66,11 @@ body {
   background: rgba(255, 255, 255, 0.85); /* fundal semi-transparent */
   backdrop-filter: blur(15px); /* efect de blur */
   border-radius: 0; /* colțuri drepte, pentru full-screen */
-  box-shadow: none; /* evităm umbrele dacă e pe tot ecranul */
+  box-shadow: none; 
   text-align: center;
   transition: all 0.3s ease-in-out;
   animation: slideInUp 0.8s ease-out;
-  overflow-y: auto; /* scroll intern dacă e nevoie */
+  overflow-y: auto; 
 }
 
 
@@ -279,7 +279,7 @@ body.dark-mode .p-submenu-list {
 }
 
 
-/* Într-un fișier CSS separat */
+
 .p-m-3 {
   margin: 1.5rem;
 }

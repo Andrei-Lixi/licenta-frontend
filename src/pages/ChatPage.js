@@ -101,7 +101,7 @@ function ChatPage() {
     </div>
   ))}
 
-  {/* Buton mic, mereu sub lista */}
+
   <div className="p-mt-3 p-text-center">
     <Button 
       icon="pi pi-plus" 
